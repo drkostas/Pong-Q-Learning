@@ -6,8 +6,6 @@ https://github.com/drkostas/Q-Learning/blob/master/LICENSE)
 ## Table of Contents
 
 + [About](#about)
-+ [Getting Started](#getting_started)
-    + [Prerequisites](#prerequisites)
 + [Installing, Testing, Building](#installing)
 + [Running locally](#run_locally)
 + [License](#license)
@@ -20,28 +18,6 @@ state. The assignment comprises of writing a Python-based simulation, and then a
 which analyzes and explains the results.
 
 To get started, follow their respective instructions.
-
-## Getting Started <a name = "getting_started"></a>
-
-These instructions will get you a copy of the project up and running on your local machine for
-development and testing purposes. See deployment for notes on how to deploy the project on a live
-system.
-
-### Prerequisites <a name = "prerequisites"></a>
-
-You need to have a machine with Python > 3.8 
-and any Bash based shell (e.g. zsh) installed.
-
-```ShellSession
-
-$ python3.8 -V
-Python 3.8
-
-$ echo $SHELL
-/usr/bin/zsh
-
-```
-
 
 ## Installing, Testing, Building <a name = "installing"></a>
 
