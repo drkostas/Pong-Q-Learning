@@ -24,19 +24,32 @@ def main(args):
     except ValueError:
         raise Exception("Invalid Parameter Types")
 
+
+    include_Vel = True
     p = pongGame(300, 300)
     done = False
 
     Q = np.load(file_name)
 
     hits = 0
-
+    x = p.getState()
     while (not done):
-        player, c, ball_x, ball_y = p.getState()[:4]
+
+        player,c , ball_x, ball_y,vel_x,vel_y = p.getState()[:6]
         player = Tab(player,grid_dem)
         ball_x = Tab(ball_x,grid_dem)
         ball_y = Tab(ball_y,grid_dem)
-        action_values = Q[player, ball_x, ball_y]
+        if(include_Vel):
+            vel_x = Tab_Vel(vel_x)
+            vel_y = Tab_Vel(vel_y)
+
+
+        if (include_Vel):
+            action_values = Q[player, ball_x, ball_y, vel_x, vel_y]
+        else:
+            action_values = Q[player, ball_x, ball_y]
+
+
         action = np.argmax(action_values)
         r = p.takeAction(action)
         if(r ==1):
@@ -55,6 +68,12 @@ def Tab(item, grid_dem):
     if(val==grid_dem):
         val = val-1
     return val
+
+def Tab_Vel(vel):
+    if(vel>0):
+        return 1
+    else:
+        return 0
 
 if __name__ == "__main__":
     main(sys.argv[1:])

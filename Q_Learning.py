@@ -28,6 +28,10 @@ def main(args):
     except ValueError:
         raise Exception("Invalid Parameter Types")
 
+    y = np.arange(35).reshape(5, 7)
+
+
+
     agent = Agent(grid_dem,alpha,epsilon,300)
 
     print("Training Progress:")
@@ -43,6 +47,7 @@ def main(args):
             vals = agent.Check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
+            print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
 
     Progress_Bar(1)
     agent.Save(file_name)
@@ -72,8 +77,13 @@ class Agent:
         self.grid_dem = grid_dem
         self.alpha = alpha
         self.epsilon = epsilon
-        self.Q = np.zeros((grid_dem,grid_dem,grid_dem,3)) # Currently (player position, ball x, ball y)
+        self.include_Vel=True
+        if(self.include_Vel):
+            self.Q = np.zeros((grid_dem,grid_dem,grid_dem,2,4,3)) # Currently (player position, ball x, ball y, velocity x, velocity y)
+        else:
+            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))   # Currently (player position, ball x, ball y, velocity x, velocity y)
         self.map_size = map_size
+
 
 
     def Run_Learning_Episode(self):
@@ -82,15 +92,22 @@ class Agent:
         done = False
 
         # Get init position info
-        player,c , ball_x, ball_y = p.getState()[:4]
+        player,c , ball_x, ball_y,vel_x,vel_y = p.getState()[:6]
         player = self.Tab(player)
         ball_x = self.Tab(ball_x)
         ball_y = self.Tab(ball_y)
 
+        if(self.include_Vel):
+            vel_x = self.Tab_Vel_x(vel_x)
+            vel_y = self.Tab_Vel_y(vel_y)
+
         while (not done):
 
             # Choose Action
-            action_values = self.Q[player,ball_x,ball_y]
+            if(self.include_Vel):
+                action_values = self.Q[player, ball_x, ball_y, vel_x,vel_y]
+            else:
+                action_values = self.Q[player,ball_x,ball_y]
 
             ran  = random.random()
             if(ran >self.epsilon):
@@ -102,21 +119,32 @@ class Agent:
             r = p.takeAction(action)
 
             # Determine new state
-            player_i, c,ball_x_i, ball_y_i = p.getState()[:4]
+            player_i, c,ball_x_i, ball_y_i, vel_x_i, vel_y_i = p.getState()[:6]
             player_i = self.Tab(player_i)
             ball_x_i = self.Tab(ball_x_i)
             ball_y_i = self.Tab(ball_y_i)
 
+            if (self.include_Vel):
+                vel_x_i = self.Tab_Vel_x(vel_x_i)
+                vel_y_i = self.Tab_Vel_y(vel_y_i)
             # Update Q Value
-            self.Q[player,ball_x,ball_y,action] = self.Q[player,ball_x,ball_y,action]+\
-                self.alpha*(r+max(self.Q[player_i,ball_x_i,ball_y_i])- \
-                self.Q[player, ball_x, ball_y, action])
+
+            if(self.include_Vel):
+                self.Q[player,ball_x,ball_y,vel_x,vel_y, action] = self.Q[player, ball_x, ball_y, vel_x, vel_y, action]+\
+                    self.alpha*(r+max(self.Q[player_i,ball_x_i,ball_y_i,vel_x_i, vel_y_i])- \
+                    self.Q[player, ball_x, ball_y,vel_x, vel_y, action])
+            else:
+                self.Q[player, ball_x, ball_y, action] = self.Q[player, ball_x, ball_y, action] + \
+                    self.alpha * (r + max(self.Q[player_i, ball_x_i, ball_y_i]) - \
+                    self.Q[player, ball_x, ball_y, action])
 
             # Update State values
             player = player_i
             ball_x = ball_x_i
             ball_y = ball_y_i
-
+            if(self.include_Vel):
+                vel_x = vel_x_i
+                vel_y = vel_y_i
 
             if (r == 100 or r == -100):
                 done = True
@@ -135,13 +163,22 @@ class Agent:
             while (not done):
 
                 # Get locations
-                player,c, ball_x, ball_y = p.getState()[:4]
+                player, c, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
                 player = self.Tab(player)
                 ball_x = self.Tab(ball_x)
                 ball_y = self.Tab(ball_y)
 
+                if (self.include_Vel):
+                    vel_x = self.Tab_Vel_x(vel_x)
+                    vel_y = self.Tab_Vel_y(vel_y)
+
+
                 # Choose Action
-                action_values = self.Q[player, ball_x, ball_y]
+                if (self.include_Vel):
+                    action_values = self.Q[player, ball_x, ball_y, vel_x, vel_y]
+                else:
+                    action_values = self.Q[player, ball_x, ball_y]
+
                 action = np.argmax(action_values)
 
                 # Take action and observe reward
@@ -161,9 +198,26 @@ class Agent:
 
     def Tab(self, item):
         val = int(np.floor((item/self.map_size)*self.grid_dem))
-        if(val==self.grid_dem):
-            val = val-1
+        if(val>=self.grid_dem):
+            val = self.grid_dem-1
         return val
+
+    def Tab_Vel_x(self,vel):
+        if(vel<0):
+            return 0
+        else:
+            return 1
+
+
+    def Tab_Vel_y(self,vel):
+        if(vel<-.5):
+            return 0
+        elif(vel<0):
+            return 1
+        elif(vel<.5):
+            return 2
+        else:
+            return 3
 
     def Save(self, fileName):
         np.save(fileName,self.Q)
