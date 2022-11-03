@@ -37,7 +37,11 @@ class Agent:
         while (not done):
 
             # Choose Action
-            action_values = self.Q[player, ball_x, ball_y]
+            try:
+                action_values = self.Q[player, ball_x, ball_y]
+            except IndexError as e:
+                print("Tried to retrieve Q value with:", (player, ball_x, ball_y))
+                raise e
 
             ran = random.random()
             if (ran > self.epsilon):
@@ -109,11 +113,12 @@ class Agent:
                         win_count = win_count+1
         reward = reward/500
         return reward, win_count
-
+    
     def tab(self, item):
-        val = int(np.floor((item/self.map_size)*self.grid_dem))
-        if (val == self.grid_dem):
-            val = val-1
+        val = int(np.floor(np.interp(item ,[0, self.map_size-1], [0, self.grid_dem-1])))
+        # val = int(np.floor((item/self.map_size)*self.grid_dem))
+        # if (val == self.grid_dem):
+        #     val = val-1
         return val
 
     def save(self, file_name):

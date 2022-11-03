@@ -24,7 +24,7 @@ def main(args):
     except ValueError:
         raise Exception("Invalid Parameter Types")
 
-    p = pongGame(300, 300)
+    p = pongGame(300, 300, True, 5)
     done = False
 
     Q = np.load(file_name)
