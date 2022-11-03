@@ -122,14 +122,14 @@ class Agent:
 
 def progress_bar(progress: float) -> None:
     """ Custom Progress bar to show progress of training."""
-    print ("\033[A                             \033[A")
+    print ("\033[A                             \033[A")  # Clear last line
     prog = "["
     for _ in range(int(np.floor(progress*25))):
         prog += "="
     prog += ">"
     for _ in range(26-len(prog)):
         prog += " "
-    prog = prog+"]"
+    prog = prog+"]"+str(int(np.floor(progress*100)))+"%"
     print(prog)
 
 
