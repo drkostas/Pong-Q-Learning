@@ -6,8 +6,8 @@ https://github.com/drkostas/Q-Learning/blob/master/LICENSE)
 ## Table of Contents
 
 + [About](#about)
-+ [Installing, Testing, Building](#installing)
-+ [Running locally](#run_locally)
++ [Requirements](#installing)
++ [Running the code](#run)
 + [License](#license)
 
 ## About <a name = "about"></a>
@@ -19,7 +19,7 @@ which analyzes and explains the results.
 
 To get started, follow their respective instructions.
 
-## Installing, Testing, Building <a name = "installing"></a>
+## Requirements <a name = "installing"></a>
 
 
 Before running the programs, you should first create a conda environment, load it, and install the requirements
@@ -32,7 +32,7 @@ $ pip install -r requirements.txt
 ```
 
 
-## Running the code <a name = "run_locally"></a>
+## Running the code <a name = "run"></a>
 
 In order to run the code, first, make sure you are in the correct virtual environment:
 

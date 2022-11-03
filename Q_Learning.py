@@ -13,7 +13,6 @@ def main(args):
     if len(args) == 6:
         # Load the arguments
         q, a, e, n, c, f = args
-        # TODO:Cast the arguments to the correct type::Complete
     else:
         # If more or less arguments are given, print an error message
         raise Exception("Invalid number of arguments")
@@ -28,37 +27,35 @@ def main(args):
     except ValueError:
         raise Exception("Invalid Parameter Types")
 
-    y = np.arange(35).reshape(5, 7)
 
-
-
-    agent = Agent(grid_dem,alpha,epsilon,300)
+    agent = Agent(grid_dem, alpha, epsilon, 300)
 
     print("Training Progress:")
 
     win_count = []
     avg_score = []
 
+    # @GCantrall: alternatively we could use tqdm here:
+    # from tqdm import tqdm
+    # for i in tqdm(range(num_train_episodes)):
     for i in range(num_train_episodes):
-        agent.Run_Learning_Episode()
-        if((i)%100==0):
-            Progress_Bar((float(i))/num_train_episodes)
-        if(i%check_freq==0):
-            vals = agent.Check()
+        agent.run_learning_episode()
+        if ((i) % 100 == 0):
+            progress_bar((float(i))/num_train_episodes)
+        if (i % check_freq == 0):
+            vals = agent.check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
             print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
 
-    Progress_Bar(1)
-    agent.Save(file_name)
-
-
-
+    progress_bar(1)
+    agent.save(file_name)
 
     print("Win Count:")
     print(win_count)
     print("Average Score:")
     print(avg_score)
+
 
 # Progress bar to show progress
 def Progress_Bar(progress):
@@ -221,8 +218,6 @@ class Agent:
 
     def Save(self, fileName):
         np.save(fileName,self.Q)
-
-
 
 
 if __name__ == "__main__":
