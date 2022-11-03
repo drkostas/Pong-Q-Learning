@@ -122,11 +122,13 @@ class Agent:
 
 def progress_bar(progress: float) -> None:
     """ Custom Progress bar to show progress of training."""
+    print ("\033[A                             \033[A")
     prog = "["
     for _ in range(int(np.floor(progress*25))):
-        prog = prog+"="
+        prog += "="
+    prog += ">"
     for _ in range(26-len(prog)):
-        prog = prog+" "
+        prog += " "
     prog = prog+"]"
     print(prog)
 
@@ -166,7 +168,7 @@ def main(args):
         agent.run_learning_episode()
         if ((i) % 100 == 0):
             progress_bar((float(i))/num_train_episodes)
-        if (i % check_freq == 0) and False:
+        if (i % check_freq == 0):
             vals = agent.check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
