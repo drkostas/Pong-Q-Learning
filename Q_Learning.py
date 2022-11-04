@@ -6,6 +6,11 @@ import sys
 import time
 import numpy as np
 from pong.pongclass import pongGame
+import tensorflow as tf
+import os
+os.environ['AUTOGRAPH_VERBOSITY'] = '0'
+
+
 def main(args):
     """ Main function"""
     print("------ Initializing ------")
@@ -28,8 +33,8 @@ def main(args):
         raise Exception("Invalid Parameter Types")
 
 
-    agent = Agent(grid_dem, alpha, epsilon, 300)
-
+    #agent = Agent(grid_dem, alpha, epsilon, 300)
+    agent = Agent_DL(alpha,epsilon,300)
     print("Training Progress:")
 
     win_count = []
@@ -39,17 +44,17 @@ def main(args):
     # from tqdm import tqdm
     # for i in tqdm(range(num_train_episodes)):
     for i in range(num_train_episodes):
-        agent.run_learning_episode()
+        agent.Run_Learning_Episode()
         if ((i) % 100 == 0):
-            progress_bar((float(i))/num_train_episodes)
+            Progress_Bar((float(i))/num_train_episodes)
         if (i % check_freq == 0):
-            vals = agent.check()
+            vals = agent.Check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
-            print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
+            #print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
 
-    progress_bar(1)
-    agent.save(file_name)
+    Progress_Bar(1)
+    #agent.Save(file_name)
 
     print("Win Count:")
     print(win_count)
@@ -215,6 +220,115 @@ class Agent:
             return 2
         else:
             return 3
+
+    def Save(self, fileName):
+        np.save(fileName,self.Q)
+
+
+class Agent_DL:
+    def __init__(self,  alpha, epsilon, map_size):
+        self.alpha = alpha
+        self.epsilon = epsilon
+        self.map_size = map_size
+        self.include_Vel=True
+        self.Q = tf.keras.models.Sequential([
+            tf.keras.layers.InputLayer(input_shape=(6)),
+            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.Dense(1, activation='linear')
+        ])
+        self.Q.compile(optimizer='adam',
+                      loss='MSE',
+                      metrics=['accuracy'])
+        print(self.Q.summary())
+
+    def Run_Learning_Episode(self):
+        p = pongGame(self.map_size,self.map_size)
+
+        done = False
+
+        # Get init position info
+        player,c , ball_x, ball_y,vel_x,vel_y = p.getState()[:6]
+
+        while (not done):
+
+            # Choose Action
+            action_values = []
+            for i in range(3):
+                action_values.append(self.Q.predict([[player, ball_x, ball_y, vel_x,vel_y,i]],verbose=0)[0][0])
+
+            ran  = random.random()
+            if(ran >self.epsilon):
+                action = np.argmax(action_values)
+            else:
+                action = random.randint(0,2)
+
+            # Take Action
+            r = p.takeAction(action)
+
+            # Determine new state
+            player_i, c,ball_x_i, ball_y_i, vel_x_i, vel_y_i = p.getState()[:6]
+
+
+            future_actions = []
+            for i in range(3):
+                future_actions.append(self.Q.predict([[player_i, ball_x_i, ball_y_i, vel_x_i,vel_y_i,i]],verbose=0)[0][0])
+
+            expected_val = action_values[action]+\
+                self.alpha*(r+max(future_actions)- \
+                action_values[action])
+
+
+
+            self.Q.fit([[player, ball_x, ball_y, vel_x,vel_y,action]],[[expected_val]],verbose=0)
+
+
+            # Update State values
+            player = player_i
+            ball_x = ball_x_i
+            ball_y = ball_y_i
+
+            vel_x = vel_x_i
+            vel_y = vel_y_i
+
+            if (r == 100 or r == -100):
+                done = True
+
+    # Check function that runs 500 episodes and recordes the average final reward and the number of wins
+
+    def Check(self):
+        reward = 0
+        win_count =0
+        for i in range(500):
+
+            # Create Pong game object
+            p = pongGame(self.map_size, self.map_size)
+            done = False
+            player, c, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
+            while (not done):
+
+                # Get locations
+                # Choose Action
+                action_values = []
+                for i in range(3):
+                    action_values.append(self.Q.predict([[player, ball_x, ball_y, vel_x, vel_y, i]],verbose=0))
+
+                ran = random.random()
+                if (ran > self.epsilon):
+                    action = np.argmax(action_values)
+                else:
+                    action = random.randint(0, 2)
+
+                # Take Action
+                r = p.takeAction(action)
+                reward = reward +r
+
+                if (r == 100 or r == -100):
+                    done = True
+
+                    if(r == 100):
+                        win_count = win_count+1
+        reward = reward/500
+        return reward,win_count
 
     def Save(self, fileName):
         np.save(fileName,self.Q)
