@@ -4,7 +4,7 @@ import random
 
 
 class Agent:
-    """ Agent for playing a game of pong """
+    """ Agent for playing a game of pong. """
 
     def __init__(self, grid_dem, alpha, epsilon, map_size,
                  include_vel=True):
@@ -156,24 +156,26 @@ class Agent:
 
 
 class Agent_DL:
+    """ Deep Learning Agent for playing a game of pong. """
 
     def __init__(self,  alpha, epsilon, map_size,
                  include_vel=True):
         # Load it here so that you can run the other
         # agents without installing tensorflow
         import tensorflow as tf
+        tf.compat.v1.disable_eager_execution()
         self.alpha = alpha
         self.epsilon = epsilon
         self.map_size = map_size
         self.include_vel = include_vel
         self.Q = tf.keras.models.Sequential([
-            tf.keras.layers.InputLayer(input_shape=(6)),
-            tf.keras.layers.Dense(32, activation='relu'),
+            tf.keras.layers.InputLayer(input_shape=(6,)),
+            tf.keras.layers.Dense(10, activation='relu'),
             tf.keras.layers.Dense(1, activation='linear')
         ])
         self.Q.compile(optimizer='adam',
                        loss='MSE',
-                       metrics=['accuracy'])
+                       metrics=['accuracy', 'mae'])
         print(self.Q.summary())
 
     def run_learning_episode(self, game_speed=1000, render_game=False):
@@ -190,8 +192,10 @@ class Agent_DL:
             # Choose Action
             action_values = []
             for i in range(3):
-                action_values.append(self.Q.predict(
-                    [[player, ball_x, ball_y, vel_x, vel_y, i]], verbose=0)[0][0])
+                x = np.array([player, c, ball_x, ball_y, vel_x, vel_y])
+                action_value = self.Q.predict(x=x.reshape(1, 6),
+                                              verbose=0)[0][0]
+                action_values.append(action_value)
 
             ran = random.random()
             if (ran > self.epsilon):
@@ -207,16 +211,20 @@ class Agent_DL:
             player_i, _, ball_x_i, ball_y_i, vel_x_i, vel_y_i = state
 
             future_actions = []
-            for i in range(3):
-                future_actions.append(self.Q.predict(
-                    [[player_i, ball_x_i, ball_y_i, vel_x_i, vel_y_i, i]], verbose=0)[0][0])
+            for _ in range(3):
+                x = np.array([player, c, ball_x, ball_y, vel_x, vel_y])
+                action_value = self.Q.predict(x=x.reshape(1, 6),
+                                              verbose=0)[0][0]
+                future_actions.append(action_value)
 
             expected_val = action_values[action] +\
                 self.alpha*(r+max(future_actions) -
                             action_values[action])
 
-            self.Q.fit([[player, ball_x, ball_y, vel_x, vel_y, action]], [
-                       [expected_val]], verbose=0)
+            x = np.array([player, c, ball_x, ball_y, vel_x, vel_y])
+            y = np.array([expected_val])
+            self.Q.fit(x=x.reshape(1, 6), y=y.reshape(1, 1),
+                       verbose=0)
 
             # Update State values
             player = player_i
@@ -246,8 +254,9 @@ class Agent_DL:
                 # Choose Action
                 action_values = []
                 for i in range(3):
-                    action_values.append(self.Q.predict(
-                        [[player, ball_x, ball_y, vel_x, vel_y, i]], verbose=0))
+                    x = np.array([player, c, ball_x, ball_y, vel_x, vel_y])
+                    action_value = self.Q.predict(x=x.reshape(1, 6), verbose=0)
+                    action_values.append(action_value)
 
                 ran = random.random()
                 if (ran > self.epsilon):

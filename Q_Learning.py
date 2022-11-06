@@ -9,7 +9,7 @@ import time
 import numpy as np
 import os
 from agents import Agent, Agent_DL
-os.environ['AUTOGRAPH_VERBOSITY'] = '0'
+os.environ['AUTOGRAPH_VERBOSITY'] = '1'
 
 
 def load_args():
@@ -75,7 +75,7 @@ def main():
 
     # @GCantrall: alternatively we could use tqdm here:
     # from tqdm import tqdm
-    # for i in tqdm(range(num_train_episodes)):
+    # for i in tqdm(range(num_episodes)):
     for i in range(num_episodes):
         agent.run_learning_episode(game_speed=100, render_game=False)
         if ((i) % 100 == 0):
@@ -84,7 +84,7 @@ def main():
             vals = agent.check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
-            # print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
+            print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
 
     progress_bar(1)
     agent.save(save_path)
