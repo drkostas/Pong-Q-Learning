@@ -1,0 +1,19 @@
+name: pong_learning
+channels:
+  - apple
+  - conda-forge
+dependencies:
+  - python=3.9  ## specify desired version
+  - pip
+  - tensorflow-deps
+  - numpy
+
+  ## uncomment for use with Jupyter
+  ## - ipykernel
+
+  ## PyPI packages
+  - pip:
+    - tensorflow-macos
+    - tensorflow-metal  ## optional, but recommended
+    - pygame
+    - tqdm
