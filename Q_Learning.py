@@ -77,7 +77,7 @@ def main():
     # from tqdm import tqdm
     # for i in tqdm(range(num_train_episodes)):
     for i in range(num_episodes):
-        agent.run_learning_episode()
+        agent.run_learning_episode(game_speed=100, render_game=False)
         if ((i) % 100 == 0):
             progress_bar((float(i))/num_episodes)
         if (i % check_freq == 0):

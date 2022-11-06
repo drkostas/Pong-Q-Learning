@@ -20,8 +20,9 @@ class Agent:
             self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))
         self.map_size = map_size
 
-    def run_learning_episode(self):
-        p = pongGame(self.map_size, self.map_size, draw=False, game_speed=100)
+    def run_learning_episode(self, game_speed=1000, render_game=False):
+        p = pongGame(self.map_size, self.map_size,
+                     game_speed=game_speed, draw=render_game)
 
         done = False
 
@@ -175,8 +176,9 @@ class Agent_DL:
                        metrics=['accuracy'])
         print(self.Q.summary())
 
-    def run_learning_episode(self):
-        p = pongGame(self.map_size, self.map_size, draw=False, game_speed=100)
+    def run_learning_episode(self, game_speed=1000, render_game=False):
+        p = pongGame(self.map_size, self.map_size,
+                     game_speed=game_speed, draw=render_game)
 
         done = False
 
