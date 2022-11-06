@@ -1,6 +1,9 @@
 """
-usage: python3 runEpisode.py q f
+usage: python runEpisode.py grid_dem file_name
+description: Runs a single episode of the game using the Q-table
+output: Prints the results of the game
 """
+
 import random
 import sys
 import time
@@ -23,20 +26,18 @@ def load_args():
     except ValueError:
         raise Exception("Invalid Parameter Types")
 
-    include_vel = True
-
     return grid_dem, file_name
 
 
 def tab(item, grid_dem):
     val = int(np.floor((item/300)*grid_dem))
-    if (val == grid_dem):
+    if val == grid_dem:
         val = val-1
     return val
 
 
 def tab_vel(vel):
-    if (vel > 0):
+    if vel > 0:
         return 1
     else:
         return 0
@@ -58,7 +59,7 @@ def main():
     print("------ Games Starts ------")
     done = False
     hits = 0
-    while (not done):
+    while not done:
         state = p.getState()[:6]
         player, c, ball_x, ball_y, vel_x, vel_y = state
         player = tab(player, grid_dem)
@@ -75,13 +76,13 @@ def main():
 
         action = np.argmax(action_values)
         r = p.takeAction(action)
-        if (r == 1):
+        if r == 1:
             hits = hits+1
         p.draw()
         time.sleep(0.05)
-        if (r == 100 or r == -100):
+        if r == 100 or r == -100:
             done = True
-    if (r == 100):
+    if r == 100:
         print("The agent WON with "+str(hits)+" hits.")
     else:
         print("The agent LOST with " + str(hits) + " hits.")

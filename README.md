@@ -48,14 +48,14 @@ Now, in order to train the agent you can call the [Q_Learning.py](Q_Learning.py)
 directly.
 
 ```ShellSession
-$ python Q_Learning.py q a e n c f
+$ python Q_Learning.py grid_dem alpha epsilon num_episodes check_freq file_name [agent_type]
 ```
 
 Then, to test the agent you can call the [runEpisode.py](runEpisode.py)
 directly.
 
 ```ShellSession
-$ python runEpisode.py q f
+$ python runEpisode.py grid_dem file_name
 ```
 
 
