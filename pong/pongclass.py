@@ -7,7 +7,7 @@ import random
 # pong game class
 class pongGame:
     # initializing parameters
-    def __init__(self, h, w, draw=True, totalSpeed=2):
+    def __init__(self, h, w, draw=True, game_speed=2):
         # window height
         self.h = h
         # window width
@@ -23,7 +23,7 @@ class pongGame:
         self.yball = self.h/2
         # ball speed and angle
         self.angle = random.random()*0.5*math.pi+0.75*math.pi
-        self.totalSpeed = totalSpeed
+        self.totalSpeed = game_speed
         self.ballHDirection = self.totalSpeed*math.cos(self.angle)
         self.ballVDirection = self.totalSpeed*math.sin(self.angle)
         # player paddle location

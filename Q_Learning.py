@@ -1,60 +1,93 @@
 """
-usage: python Q_Learning.py q a e n c f
+usage: python Q_Learning.py grid_dem alpha epsilon num_episodes check_freq file_name [agent_type]
+description: Runs the Q-Learning algorithm on a grid world
+output: Saves the Q-table to a file
 """
-import random
+
 import sys
 import time
 import numpy as np
-from pong.pongclass import pongGame
-import tensorflow as tf
 import os
+from agents import Agent, Agent_DL
 os.environ['AUTOGRAPH_VERBOSITY'] = '0'
 
 
-def main(args):
-    """ Main function"""
-    print("------ Initializing ------")
-    # --- Args Loading and Error Checking --- #
+def load_args():
+    """ Loads the arguments from the command line"""
+    args = sys.argv[1:]
+    # Load the arguments
     if len(args) == 6:
-        # Load the arguments
-        q, a, e, n, c, f = args
+        grid_dem, alpha, epsilon, num_episodes, check_freq, file_name = args
+        agent_type = 'classic'
+    elif len(args) == 7:
+        grid_dem, alpha, epsilon, num_episodes, check_freq, file_name, agent_type = args
     else:
         # If more or less arguments are given, print an error message
         raise Exception("Invalid number of arguments")
     # Cast all arguments and make sure they are proper data types
     try:
-        grid_dem = int(q)
-        alpha = float(a)
-        epsilon = float(e)
-        num_train_episodes = int(n)
-        check_freq = int(c)
-        file_name = str(f)
+        grid_dem = int(grid_dem)
+        alpha = float(alpha)
+        epsilon = float(epsilon)
+        num_episodes = int(num_episodes)
+        check_freq = int(check_freq)
+        file_name = str(file_name)
     except ValueError:
         raise Exception("Invalid Parameter Types")
+    
+    return grid_dem, alpha, epsilon, num_episodes, check_freq, file_name, agent_type
+
+def progress_bar(progress: float) -> None:
+    """ Custom Progress bar to show progress of training."""
+    print("\033[A                             \033[A")  # Clear last line
+    prog = "["
+    for _ in range(int(np.floor(progress*25))):
+        prog += "="
+    prog += ">"
+    for _ in range(26-len(prog)):
+        prog += " "
+    prog = prog+"]"+str(int(np.floor(progress*100)))+"%"
+    print(prog)
 
 
-    #agent = Agent(grid_dem, alpha, epsilon, 300)
-    agent = Agent_DL(alpha,epsilon,300)
-    print("Training Progress:")
-
+def main():
+    """ Main function"""
+    print("------ Initializing ------")
+    # --- Args Loading and Error Checking --- #
+    grid_dem, alpha, epsilon, num_episodes, check_freq, file_name, agent_type = load_args()
+    save_path = "Q_tables/"+file_name
+    
+    # -- Initialize the agent -- #
+    if agent_type == 'classic':
+        agent = Agent(grid_dem=grid_dem, alpha=alpha, epsilon=epsilon, 
+                      map_size=300, include_vel=True)
+    elif agent_type == 'DL':
+        agent = Agent_DL(alpha=alpha, epsilon=epsilon, 
+                         map_size=300, include_vel=True)
+    else:
+        raise Exception("Invalid Agent Type")
+    
+    # --- Training --- #
+    print("------ Starting Training ------")
+    print("Progress:\n")
     win_count = []
     avg_score = []
 
     # @GCantrall: alternatively we could use tqdm here:
     # from tqdm import tqdm
     # for i in tqdm(range(num_train_episodes)):
-    for i in range(num_train_episodes):
-        agent.Run_Learning_Episode()
+    for i in range(num_episodes):
+        agent.run_learning_episode()
         if ((i) % 100 == 0):
-            Progress_Bar((float(i))/num_train_episodes)
+            progress_bar((float(i))/num_episodes)
         if (i % check_freq == 0):
-            vals = agent.Check()
+            vals = agent.check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
-            #print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
+            # print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
 
-    Progress_Bar(1)
-    #agent.Save(file_name)
+    progress_bar(1)
+    agent.save(save_path)
 
     print("Win Count:")
     print(win_count)
@@ -62,277 +95,5 @@ def main(args):
     print(avg_score)
 
 
-# Progress bar to show progress
-def Progress_Bar(progress):
-    prog = "["
-    for i in range(int(np.floor(progress*25))):
-        prog = prog+"="
-    for i in range(26-len(prog)):
-        prog = prog+" "
-    prog = prog+"]"
-    print(prog)
-    # Call some functions
-
-# Training Agent
-class Agent:
-    def __init__(self, grid_dem, alpha, epsilon, map_size):
-        self.grid_dem = grid_dem
-        self.alpha = alpha
-        self.epsilon = epsilon
-        self.include_Vel=True
-        if(self.include_Vel):
-            self.Q = np.zeros((grid_dem,grid_dem,grid_dem,2,4,3)) # Currently (player position, ball x, ball y, velocity x, velocity y)
-        else:
-            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))   # Currently (player position, ball x, ball y, velocity x, velocity y)
-        self.map_size = map_size
-
-
-
-    def Run_Learning_Episode(self):
-        p = pongGame(self.map_size,self.map_size)
-
-        done = False
-
-        # Get init position info
-        player,c , ball_x, ball_y,vel_x,vel_y = p.getState()[:6]
-        player = self.Tab(player)
-        ball_x = self.Tab(ball_x)
-        ball_y = self.Tab(ball_y)
-
-        if(self.include_Vel):
-            vel_x = self.Tab_Vel_x(vel_x)
-            vel_y = self.Tab_Vel_y(vel_y)
-
-        while (not done):
-
-            # Choose Action
-            if(self.include_Vel):
-                action_values = self.Q[player, ball_x, ball_y, vel_x,vel_y]
-            else:
-                action_values = self.Q[player,ball_x,ball_y]
-
-            ran  = random.random()
-            if(ran >self.epsilon):
-                action = np.argmax(action_values)
-            else:
-                action = random.randint(0,2)
-
-            # Take Action
-            r = p.takeAction(action)
-
-            # Determine new state
-            player_i, c,ball_x_i, ball_y_i, vel_x_i, vel_y_i = p.getState()[:6]
-            player_i = self.Tab(player_i)
-            ball_x_i = self.Tab(ball_x_i)
-            ball_y_i = self.Tab(ball_y_i)
-
-            if (self.include_Vel):
-                vel_x_i = self.Tab_Vel_x(vel_x_i)
-                vel_y_i = self.Tab_Vel_y(vel_y_i)
-            # Update Q Value
-
-            if(self.include_Vel):
-                self.Q[player,ball_x,ball_y,vel_x,vel_y, action] = self.Q[player, ball_x, ball_y, vel_x, vel_y, action]+\
-                    self.alpha*(r+max(self.Q[player_i,ball_x_i,ball_y_i,vel_x_i, vel_y_i])- \
-                    self.Q[player, ball_x, ball_y,vel_x, vel_y, action])
-            else:
-                self.Q[player, ball_x, ball_y, action] = self.Q[player, ball_x, ball_y, action] + \
-                    self.alpha * (r + max(self.Q[player_i, ball_x_i, ball_y_i]) - \
-                    self.Q[player, ball_x, ball_y, action])
-
-            # Update State values
-            player = player_i
-            ball_x = ball_x_i
-            ball_y = ball_y_i
-            if(self.include_Vel):
-                vel_x = vel_x_i
-                vel_y = vel_y_i
-
-            if (r == 100 or r == -100):
-                done = True
-
-    # Check function that runs 500 episodes and recordes the average final reward and the number of wins
-
-    def Check(self):
-        reward = 0
-        win_count =0
-        for i in range(500):
-
-            # Create Pong game object
-            p = pongGame(self.map_size, self.map_size)
-            done = False
-
-            while (not done):
-
-                # Get locations
-                player, c, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
-                player = self.Tab(player)
-                ball_x = self.Tab(ball_x)
-                ball_y = self.Tab(ball_y)
-
-                if (self.include_Vel):
-                    vel_x = self.Tab_Vel_x(vel_x)
-                    vel_y = self.Tab_Vel_y(vel_y)
-
-
-                # Choose Action
-                if (self.include_Vel):
-                    action_values = self.Q[player, ball_x, ball_y, vel_x, vel_y]
-                else:
-                    action_values = self.Q[player, ball_x, ball_y]
-
-                action = np.argmax(action_values)
-
-                # Take action and observe reward
-                r = p.takeAction(action)
-                reward = reward +r
-
-                if (r == 100 or r == -100):
-                    done = True
-
-                    if(r == 100):
-                        win_count = win_count+1
-        reward = reward/500
-        return reward,win_count
-
-
-
-
-    def Tab(self, item):
-        val = int(np.floor((item/self.map_size)*self.grid_dem))
-        if(val>=self.grid_dem):
-            val = self.grid_dem-1
-        return val
-
-    def Tab_Vel_x(self,vel):
-        if(vel<0):
-            return 0
-        else:
-            return 1
-
-
-    def Tab_Vel_y(self,vel):
-        if(vel<-.5):
-            return 0
-        elif(vel<0):
-            return 1
-        elif(vel<.5):
-            return 2
-        else:
-            return 3
-
-    def Save(self, fileName):
-        np.save(fileName,self.Q)
-
-
-class Agent_DL:
-    def __init__(self,  alpha, epsilon, map_size):
-        self.alpha = alpha
-        self.epsilon = epsilon
-        self.map_size = map_size
-        self.include_Vel=True
-        self.Q = tf.keras.models.Sequential([
-            tf.keras.layers.InputLayer(input_shape=(6)),
-            tf.keras.layers.Dense(32, activation='relu'),
-            tf.keras.layers.Dense(1, activation='linear')
-        ])
-        self.Q.compile(optimizer='adam',
-                      loss='MSE',
-                      metrics=['accuracy'])
-        print(self.Q.summary())
-
-    def Run_Learning_Episode(self):
-        p = pongGame(self.map_size,self.map_size)
-
-        done = False
-
-        # Get init position info
-        player,c , ball_x, ball_y,vel_x,vel_y = p.getState()[:6]
-
-        while (not done):
-
-            # Choose Action
-            action_values = []
-            for i in range(3):
-                action_values.append(self.Q.predict([[player, ball_x, ball_y, vel_x,vel_y,i]],verbose=0)[0][0])
-
-            ran  = random.random()
-            if(ran >self.epsilon):
-                action = np.argmax(action_values)
-            else:
-                action = random.randint(0,2)
-
-            # Take Action
-            r = p.takeAction(action)
-
-            # Determine new state
-            player_i, c,ball_x_i, ball_y_i, vel_x_i, vel_y_i = p.getState()[:6]
-
-
-            future_actions = []
-            for i in range(3):
-                future_actions.append(self.Q.predict([[player_i, ball_x_i, ball_y_i, vel_x_i,vel_y_i,i]],verbose=0)[0][0])
-
-            expected_val = action_values[action]+\
-                self.alpha*(r+max(future_actions)- \
-                action_values[action])
-
-
-
-            self.Q.fit([[player, ball_x, ball_y, vel_x,vel_y,action]],[[expected_val]],verbose=0)
-
-
-            # Update State values
-            player = player_i
-            ball_x = ball_x_i
-            ball_y = ball_y_i
-
-            vel_x = vel_x_i
-            vel_y = vel_y_i
-
-            if (r == 100 or r == -100):
-                done = True
-
-    # Check function that runs 500 episodes and recordes the average final reward and the number of wins
-
-    def Check(self):
-        reward = 0
-        win_count =0
-        for i in range(500):
-
-            # Create Pong game object
-            p = pongGame(self.map_size, self.map_size)
-            done = False
-            player, c, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
-            while (not done):
-
-                # Get locations
-                # Choose Action
-                action_values = []
-                for i in range(3):
-                    action_values.append(self.Q.predict([[player, ball_x, ball_y, vel_x, vel_y, i]],verbose=0))
-
-                ran = random.random()
-                if (ran > self.epsilon):
-                    action = np.argmax(action_values)
-                else:
-                    action = random.randint(0, 2)
-
-                # Take Action
-                r = p.takeAction(action)
-                reward = reward +r
-
-                if (r == 100 or r == -100):
-                    done = True
-
-                    if(r == 100):
-                        win_count = win_count+1
-        reward = reward/500
-        return reward,win_count
-
-    def Save(self, fileName):
-        np.save(fileName,self.Q)
-
-
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()
