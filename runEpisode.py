@@ -10,7 +10,7 @@ import pickle
 import numpy as np
 from pong.pongclass import pongGame
 
-GAME_SPEED = 5
+GAME_SPEED = 6
 
 
 def load_args():
@@ -35,6 +35,7 @@ def load_agent(file_name):
     # Load pickle file
     with open(file_name, 'rb') as f:
         data = pickle.load(f)
+    data['grid_dem'] = 8 if data['grid_dem'] is None else data['grid_dem']
     return data['Q'], data['map_size'], data['grid_dem'], data['include_vel']
 
 
@@ -62,7 +63,7 @@ def main():
     print(f"{' Initializing ':-^30}")
     # --- Args Loading and Error Checking --- #
     grid_dem, file_name = load_args()
-    load_path = "Q_tables/"+file_name+".pkl"
+    load_path = "output/"+file_name+".pkl"
     Q, map_size, grid_dem, include_vel = load_agent(load_path)
 
     # Load Games and Q table
@@ -86,10 +87,15 @@ def main():
             vel_x = tab_vel(vel_x)
             vel_y = tab_vel(vel_y)
 
-        if include_vel:
-            action_values = Q[player, ball_x, ball_y, vel_x, vel_y]
+        if isinstance(Q, np.ndarray):
+            if include_vel:
+                action_values = Q[player, ball_x, ball_y, vel_x, vel_y]
+            else:
+                action_values = Q[player, ball_x, ball_y]
         else:
-            action_values = Q[player, ball_x, ball_y]
+            x = np.array([player, c, ball_x, ball_y, vel_x, vel_y])
+            action_values = Q.predict(x=x.reshape(1, 6),
+                                      verbose=0)[0][0]
 
         action = np.argmax(action_values)
         r = p.takeAction(action)

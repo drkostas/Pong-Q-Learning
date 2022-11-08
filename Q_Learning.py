@@ -21,7 +21,7 @@ def load_args():
     # Load the arguments
     if len(args) == 6:
         grid_dem, alpha, epsilon, num_episodes, check_freq, file_name = args
-        agent_type = 'classic'
+        agent_type = 'qlearn'
     elif len(args) == 7:
         grid_dem, alpha, epsilon, num_episodes, check_freq, file_name, agent_type = args
     else:
@@ -65,15 +65,14 @@ def main():
     print(f"{' Initializing ':-^30}")
     (grid_dem, alpha, epsilon, num_episodes,
      check_freq, file_name, agent_type) = load_args()
-    save_path = "Q_tables/"+file_name
+    save_path = "output/"+file_name
 
     # -- Initialize the agent -- #
     if agent_type == 'DL':
-        print()
         agent = Agent_DL(alpha=alpha, epsilon=epsilon, game_speed=GAME_SPEED,
                          render_game=DRAW, map_size=MAP_SIZE,
                          include_vel=INCLUDE_VEL)
-    else:  # Defaults to `classic` agent
+    else:  # Defaults to `qlearn` agent
         agent = Agent(grid_dem=grid_dem, alpha=alpha, epsilon=epsilon,
                       map_size=MAP_SIZE, game_speed=GAME_SPEED,
                       render_game=DRAW, include_vel=INCLUDE_VEL)
@@ -81,8 +80,10 @@ def main():
     # --- Training --- #
     clear_line()
     print(f"{' Training Starts ':-^30}")
-    print(f"Map Size: {MAP_SIZE}x{MAP_SIZE}, Grid: {grid_dem}, Check Freq: {check_freq}")
-    print(f"Alpha: {alpha}, Epsilon: {epsilon} Use Velocity: {INCLUDE_VEL}")
+    print(
+        f"Map Size: {MAP_SIZE}x{MAP_SIZE}, Grid: {grid_dem}, Check Freq: {check_freq}")
+    print(
+        f"Episodes: {num_episodes}, Alpha: {alpha}, Epsilon: {epsilon} Use Velocity: {INCLUDE_VEL}")
     print("Progress:\n")
     win_count = []
     avg_score = []
@@ -93,11 +94,11 @@ def main():
     for i in range(num_episodes):
         agent.run_learning_episode()
         progress_bar((float(i))/num_episodes)
-        if (i % check_freq == 0):
+        if i % check_freq == 0 and i > 0:
             vals = agent.check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
-            # print(str((agent.Q==0).sum())+"/"+str(agent.Q.size))
+            agent.save(save_path+f"_{i}episodes")
 
     progress_bar(1)
 
@@ -105,7 +106,7 @@ def main():
     print(f"{int((wins_np:=np.array(win_count)).mean())}/{wins_np.sum()}")
     print("Average Score:")
     print(np.array(avg_score).mean())
-    agent.save(save_path)
+    agent.save(save_path+f"_{num_episodes}episodes", show=True)
 
 
 if __name__ == "__main__":

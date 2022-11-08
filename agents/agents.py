@@ -22,15 +22,22 @@ class AbstractAgent(ABC):
         self.game_speed = game_speed
         self.render_game = render_game
 
-    def save(self, file_name: str) -> None:
+    def save(self, file_name: str, show: bool = False) -> None:
         out = {'alpha': self.alpha, 'epsilon': self.epsilon,
                'Q': self.Q, 'grid_dem': self.grid_dem,
                'map_size': self.map_size,
                'include_vel': self.include_vel}
         # Save as pickle
+        file_name += '_with_vel' if self.include_vel else ''
         with open(file_name+'.pkl', 'wb') as f:
             pickle.dump(out, f, pickle.HIGHEST_PROTOCOL)
-        print(f"Training Data saved to `{file_name}.pkl`")
+        if show:
+            print(f"Training Data saved to `{file_name}.pkl`")
+            only_file_name = file_name.split('/')[-1]
+            print("To run 1000 episodes run:")
+            print(f"\t`python run1000Episodes.py {self.grid_dem} {only_file_name}`")
+            print("To play an episode run:")
+            print(f"\t`python runEpisode.py {self.grid_dem} {only_file_name}`")
 
     @abstractmethod
     def run_learning_episode(self, game_speed: float, render_game: bool) -> None:
@@ -54,10 +61,10 @@ class Agent(AbstractAgent):
         # Initialize Q Table
         if self.include_vel:
             # (player position, ball x, ball y, velocity x, velocity y)
-            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 2, 4, 3))*2
+            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 2, 4, 3))
         else:
-            # (player position, ball x, ball y, velocity x, velocity y)
-            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))*2
+            # (player position, ball x, ball y)
+            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))
 
     def run_learning_episode(self) -> None:
         p = pongGame(self.map_size, self.map_size,
@@ -122,7 +129,7 @@ class Agent(AbstractAgent):
                 done = True
 
     def check(self) -> Tuple[float, int]:
-        """ check function that runs 500 episodes and recordes 
+        """ Check function that runs 500 episodes and recordes 
             the average final reward and the number of wins. """
         reward = 0
         win_count = 0
@@ -133,7 +140,7 @@ class Agent(AbstractAgent):
                          game_speed=self.game_speed, draw=self.render_game)
             done = False
 
-            while (not done):
+            while not done:
 
                 # Get locations
                 state = p.getState()[:6]
@@ -169,22 +176,26 @@ class Agent(AbstractAgent):
 
     def tab(self, item: float) -> int:
         val = int(np.floor((item/self.map_size)*self.grid_dem))
-        if (val >= self.grid_dem):
+        if val >= self.grid_dem:
             val = self.grid_dem-1
         return val
 
     def tab_vel_x(self, vel: float) -> int:
-        if (vel < 0):
+        # return float(f"{vel:.1f}")
+        # return int(vel)
+        if vel < 0:
             return 0
         else:
             return 1
 
     def tab_vel_y(self, vel: float) -> int:
-        if (vel < -.5):
+        # return float(f"{vel:.1f}")
+        # return int(vel)
+        if vel < -0.5:
             return 0
-        elif (vel < 0):
+        elif vel < 0:
             return 1
-        elif (vel < .5):
+        elif vel < 0.5:
             return 2
         else:
             return 3
@@ -202,8 +213,9 @@ class Agent_DL(AbstractAgent):
                          render_game=render_game)
         # Load it here so that you can run the other
         # agents without installing tensorflow
-        os.environ['AUTOGRAPH_VERBOSITY'] = '0'
         import tensorflow as tf
+        os.environ['AUTOGRAPH_VERBOSITY'] = '0'
+        tf.config.set_visible_devices([], 'GPU')
         tf.compat.v1.disable_eager_execution()
         
         # Initialize Q Table
@@ -230,7 +242,7 @@ class Agent_DL(AbstractAgent):
 
             # Choose Action
             action_values = []
-            for i in range(3):
+            for _ in range(3):
                 x = np.array([player, c, ball_x, ball_y, vel_x, vel_y])
                 action_value = self.Q.predict(x=x.reshape(1, 6),
                                               verbose=0)[0][0]
