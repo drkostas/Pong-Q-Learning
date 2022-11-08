@@ -136,17 +136,18 @@ class Agent(AbstractAgent):
             while (not done):
 
                 # Get locations
-                player, c, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
+                state = p.getState()[:6]
+                player, _, ball_x, ball_y, vel_x, vel_y = state
                 player = self.tab(player)
                 ball_x = self.tab(ball_x)
                 ball_y = self.tab(ball_y)
 
-                if (self.include_vel):
+                if self.include_vel:
                     vel_x = self.tab_vel_x(vel_x)
                     vel_y = self.tab_vel_y(vel_y)
 
                 # Choose Action
-                if (self.include_vel):
+                if self.include_vel:
                     action_values = self.Q[player,
                                            ball_x, ball_y, vel_x, vel_y]
                 else:
@@ -192,10 +193,13 @@ class Agent(AbstractAgent):
 class Agent_DL(AbstractAgent):
     """ Deep Learning Agent for playing a game of pong. """
 
-    def __init__(self, alpha: float, epsilon, map_size,
+    def __init__(self, alpha: float, epsilon, map_size, 
+                 game_speed: float, render_game: bool, 
                  include_vel=True):
         # Initialize Abstract Class
-        super().__init__(alpha, epsilon, map_size, include_vel)
+        super().__init__(alpha=alpha, epsilon=epsilon, map_size=map_size, 
+                         include_vel=include_vel, game_speed=game_speed, 
+                         render_game=render_game)
         # Load it here so that you can run the other
         # agents without installing tensorflow
         os.environ['AUTOGRAPH_VERBOSITY'] = '0'
@@ -213,9 +217,9 @@ class Agent_DL(AbstractAgent):
                        metrics=['accuracy', 'mae'])
         print(self.Q.summary())
 
-    def run_learning_episode(self, game_speed=1000, render_game=False):
+    def run_learning_episode(self):
         p = pongGame(self.map_size, self.map_size,
-                     game_speed=game_speed, draw=render_game)
+                     game_speed=self.game_speed, draw=self.render_game)
 
         done = False
 

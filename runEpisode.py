@@ -10,7 +10,7 @@ import pickle
 import numpy as np
 from pong.pongclass import pongGame
 
-GAME_SPEED = 2
+GAME_SPEED = 5
 
 
 def load_args():
@@ -72,6 +72,8 @@ def main():
     # Start the game
     clear_line()
     print(f"{' Game Starts ':-^30}")
+    print(f"Map Size: {map_size}x{map_size}, Grid: {grid_dem}")
+    print(f"Use Velocity: {include_vel}, Init Game Speed: {GAME_SPEED}")
     done = False
     hits = 0
     while not done:

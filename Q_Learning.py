@@ -81,6 +81,8 @@ def main():
     # --- Training --- #
     clear_line()
     print(f"{' Training Starts ':-^30}")
+    print(f"Map Size: {MAP_SIZE}x{MAP_SIZE}, Grid: {grid_dem}, Check Freq: {check_freq}")
+    print(f"Alpha: {alpha}, Epsilon: {epsilon} Use Velocity: {INCLUDE_VEL}")
     print("Progress:\n")
     win_count = []
     avg_score = []
@@ -100,7 +102,7 @@ def main():
     progress_bar(1)
 
     print("Win Count:")
-    print(f"{int((wins_np:=np.array(win_count)).mean())}/{wins_np.shape[0]}")
+    print(f"{int((wins_np:=np.array(win_count)).mean())}/{wins_np.sum()}")
     print("Average Score:")
     print(np.array(avg_score).mean())
     agent.save(save_path)
