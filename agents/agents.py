@@ -227,13 +227,14 @@ class Agent_DL(AbstractAgent):
         # agents without installing tensorflow
         import tensorflow as tf
         os.environ['AUTOGRAPH_VERBOSITY'] = '0'
-        tf.config.set_visible_devices([], 'GPU')
+        # tf.config.set_visible_devices([], 'GPU')
         tf.compat.v1.disable_eager_execution()
         
         # Initialize Q Table
         self.Q = tf.keras.models.Sequential([
             tf.keras.layers.InputLayer(input_shape=(6,)),
-            tf.keras.layers.Dense(10, activation='relu'),
+            tf.keras.layers.Dense(64, activation='relu'),
+            tf.keras.layers.Dense(64, activation='relu'),
             tf.keras.layers.Dense(1, activation='linear')
         ])
         self.Q.compile(optimizer='adam',

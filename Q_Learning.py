@@ -12,7 +12,7 @@ from agents import Agent, Agent_DL
 MAP_SIZE = 300
 GAME_SPEED = 2
 DRAW = False
-INCLUDE_VEL = False
+INCLUDE_VEL = True
 
 
 def load_args():

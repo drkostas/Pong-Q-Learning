@@ -7,9 +7,8 @@ dependencies:
   - pip
   - tensorflow-deps
   - numpy
-
-  ## uncomment for use with Jupyter
-  ## - ipykernel
+  - ipykernel
+  - notebook
 
   ## PyPI packages
   - pip:
