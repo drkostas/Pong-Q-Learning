@@ -1,29 +1,67 @@
-from pong.pongclass import pongGame
+from typing import *
+from abc import ABC, abstractmethod
+import os
 import numpy as np
 import random
+import pickle
+from pong.pongclass import pongGame
 
 
-class Agent:
-    """ Agent for playing a game of pong. """
+class AbstractAgent(ABC):
+    """ Abstract Agent Class"""
 
-    def __init__(self, grid_dem, alpha, epsilon, map_size,
-                 include_vel=True):
+    def __init__(self, alpha: float, epsilon: float,
+                 map_size: int, include_vel: bool, 
+                 game_speed: float, render_game: bool, 
+                 grid_dem: int = None):
         self.grid_dem = grid_dem
         self.alpha = alpha
         self.epsilon = epsilon
         self.include_vel = include_vel
-        if (self.include_vel):
+        self.map_size = map_size
+        self.game_speed = game_speed
+        self.render_game = render_game
+
+    def save(self, file_name: str) -> None:
+        out = {'alpha': self.alpha, 'epsilon': self.epsilon,
+               'Q': self.Q, 'grid_dem': self.grid_dem,
+               'map_size': self.map_size,
+               'include_vel': self.include_vel}
+        # Save as pickle
+        with open(file_name+'.pkl', 'wb') as f:
+            pickle.dump(out, f, pickle.HIGHEST_PROTOCOL)
+        print(f"Training Data saved to `{file_name}.pkl`")
+
+    @abstractmethod
+    def run_learning_episode(self, game_speed: float, render_game: bool) -> None:
+        pass
+
+    @abstractmethod
+    def check(self) -> Tuple[float, int]:
+        pass
+
+
+class Agent(AbstractAgent):
+    """ Agent for playing a game of pong. """
+
+    def __init__(self, grid_dem: int, alpha: float, epsilon: float,
+                 map_size: int, game_speed: float, 
+                 render_game: bool, include_vel: bool = True):
+        # Initialize Abstract Class
+        super().__init__(alpha=alpha, epsilon=epsilon, map_size=map_size, 
+                         include_vel=include_vel, game_speed=game_speed, 
+                         render_game=render_game, grid_dem=grid_dem)
+        # Initialize Q Table
+        if self.include_vel:
             # Currently (player position, ball x, ball y, velocity x, velocity y)
             self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 2, 4, 3))
         else:
             # Currently (player position, ball x, ball y, velocity x, velocity y)
             self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))
-        self.map_size = map_size
 
-    def run_learning_episode(self, game_speed=1000, render_game=False):
+    def run_learning_episode(self) -> None:
         p = pongGame(self.map_size, self.map_size,
-                     game_speed=game_speed, draw=render_game)
-
+                     game_speed=self.game_speed, draw=self.render_game)
         done = False
 
         # Get init position info
@@ -35,15 +73,13 @@ class Agent:
         if (self.include_vel):
             vel_x = self.tab_vel_x(vel_x)
             vel_y = self.tab_vel_y(vel_y)
-
-        while (not done):
-
+            
+        while not done:
             # Choose Action
             if (self.include_vel):
                 action_values = self.Q[player, ball_x, ball_y, vel_x, vel_y]
             else:
                 action_values = self.Q[player, ball_x, ball_y]
-
             ran = random.random()
             if (ran > self.epsilon):
                 action = np.argmax(action_values)
@@ -54,8 +90,8 @@ class Agent:
             r = p.takeAction(action)
 
             # Determine new state
-            player_i, c, ball_x_i, ball_y_i, vel_x_i, vel_y_i = p.getState()[
-                :6]
+            state = p.getState()[:6]
+            player_i, c, ball_x_i, ball_y_i, vel_x_i, vel_y_i = state
             player_i = self.tab(player_i)
             ball_x_i = self.tab(ball_x_i)
             ball_y_i = self.tab(ball_y_i)
@@ -65,7 +101,7 @@ class Agent:
                 vel_y_i = self.tab_vel_y(vel_y_i)
 
             # Update Q Value
-            if (self.include_vel):
+            if self.include_vel:
                 self.Q[player, ball_x, ball_y, vel_x, vel_y, action] = self.Q[player, ball_x, ball_y, vel_x, vel_y, action] +\
                     self.alpha*(r+max(self.Q[player_i, ball_x_i, ball_y_i, vel_x_i, vel_y_i]) -
                                 self.Q[player, ball_x, ball_y, vel_x, vel_y, action])
@@ -85,15 +121,16 @@ class Agent:
             if (r == 100 or r == -100):
                 done = True
 
-    def check(self):
+    def check(self) -> Tuple[float, int]:
         """ check function that runs 500 episodes and recordes 
             the average final reward and the number of wins. """
         reward = 0
         win_count = 0
-        for i in range(500):
+        for _ in range(500):
 
             # Create Pong game object
-            p = pongGame(self.map_size, self.map_size)
+            p = pongGame(self.map_size, self.map_size,
+                         game_speed=self.game_speed, draw=self.render_game)
             done = False
 
             while (not done):
@@ -129,19 +166,19 @@ class Agent:
         reward = reward/500
         return reward, win_count
 
-    def tab(self, item):
+    def tab(self, item: float) -> int:
         val = int(np.floor((item/self.map_size)*self.grid_dem))
         if (val >= self.grid_dem):
             val = self.grid_dem-1
         return val
 
-    def tab_vel_x(self, vel):
+    def tab_vel_x(self, vel: float) -> int:
         if (vel < 0):
             return 0
         else:
             return 1
 
-    def tab_vel_y(self, vel):
+    def tab_vel_y(self, vel: float) -> int:
         if (vel < -.5):
             return 0
         elif (vel < 0):
@@ -151,23 +188,21 @@ class Agent:
         else:
             return 3
 
-    def save(self, file_name):
-        np.save(file_name, self.Q)
 
-
-class Agent_DL:
+class Agent_DL(AbstractAgent):
     """ Deep Learning Agent for playing a game of pong. """
 
-    def __init__(self,  alpha, epsilon, map_size,
+    def __init__(self, alpha: float, epsilon, map_size,
                  include_vel=True):
+        # Initialize Abstract Class
+        super().__init__(alpha, epsilon, map_size, include_vel)
         # Load it here so that you can run the other
         # agents without installing tensorflow
+        os.environ['AUTOGRAPH_VERBOSITY'] = '0'
         import tensorflow as tf
         tf.compat.v1.disable_eager_execution()
-        self.alpha = alpha
-        self.epsilon = epsilon
-        self.map_size = map_size
-        self.include_vel = include_vel
+        
+        # Initialize Q Table
         self.Q = tf.keras.models.Sequential([
             tf.keras.layers.InputLayer(input_shape=(6,)),
             tf.keras.layers.Dense(10, activation='relu'),
@@ -275,6 +310,3 @@ class Agent_DL:
                         win_count = win_count+1
         reward = reward/500
         return reward, win_count
-
-    def save(self, file_name):
-        np.save(file_name, self.Q)

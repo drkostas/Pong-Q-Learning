@@ -4,11 +4,13 @@ description: Runs a single episode of the game using the Q-table
 output: Prints the results of the game
 """
 
-import random
 import sys
 import time
+import pickle
 import numpy as np
 from pong.pongclass import pongGame
+
+GAME_SPEED = 2
 
 
 def load_args():
@@ -29,8 +31,20 @@ def load_args():
     return grid_dem, file_name
 
 
-def tab(item, grid_dem):
-    val = int(np.floor((item/300)*grid_dem))
+def load_agent(file_name):
+    # Load pickle file
+    with open(file_name, 'rb') as f:
+        data = pickle.load(f)
+    return data['Q'], data['map_size'], data['grid_dem'], data['include_vel']
+
+
+def clear_line():
+    """ Clears the last line in the terminal"""
+    print("\033[A                             \033[A")
+
+
+def tab(item, grid_dem, map_size):
+    val = int(np.floor((item/map_size)*grid_dem))
     if val == grid_dem:
         val = val-1
     return val
@@ -45,26 +59,27 @@ def tab_vel(vel):
 
 def main():
     """ Main function"""
-    print("------ Initializing ------")
+    print(f"{' Initializing ':-^30}")
     # --- Args Loading and Error Checking --- #
     grid_dem, file_name = load_args()
-    load_path = "Q_tables/"+file_name+".npy"
-    include_vel = True
+    load_path = "Q_tables/"+file_name+".pkl"
+    Q, map_size, grid_dem, include_vel = load_agent(load_path)
 
     # Load Games and Q table
-    p = pongGame(300, 300, draw=True, game_speed=2)
-    Q = np.load(load_path)
+    p = pongGame(map_size, map_size,
+                 draw=True, game_speed=GAME_SPEED)
 
     # Start the game
-    print("------ Games Starts ------")
+    clear_line()
+    print(f"{' Game Starts ':-^30}")
     done = False
     hits = 0
     while not done:
         state = p.getState()[:6]
         player, c, ball_x, ball_y, vel_x, vel_y = state
-        player = tab(player, grid_dem)
-        ball_x = tab(ball_x, grid_dem)
-        ball_y = tab(ball_y, grid_dem)
+        player = tab(player, grid_dem, map_size)
+        ball_x = tab(ball_x, grid_dem, map_size)
+        ball_y = tab(ball_y, grid_dem, map_size)
         if include_vel:
             vel_x = tab_vel(vel_x)
             vel_y = tab_vel(vel_y)
@@ -83,9 +98,9 @@ def main():
         if r == 100 or r == -100:
             done = True
     if r == 100:
-        print("The agent WON with "+str(hits)+" hits.")
+        print(f"The agent WON with {hits} hits.")
     else:
-        print("The agent LOST with " + str(hits) + " hits.")
+        print(f"The agent LOST with {hits} hits.")
 
 
 if __name__ == "__main__":

@@ -4,10 +4,12 @@ import numpy as np
 import random
 
 
-# pong game class
+
 class pongGame:
-    # initializing parameters
+    """ Pong game class """
+    
     def __init__(self, h, w, draw=True, game_speed=2):
+        """ Initializing parameters """
         # window height
         self.h = h
         # window width
