@@ -53,11 +53,11 @@ class Agent(AbstractAgent):
                          render_game=render_game, grid_dem=grid_dem)
         # Initialize Q Table
         if self.include_vel:
-            # Currently (player position, ball x, ball y, velocity x, velocity y)
-            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 2, 4, 3))
+            # (player position, ball x, ball y, velocity x, velocity y)
+            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 2, 4, 3))*2
         else:
-            # Currently (player position, ball x, ball y, velocity x, velocity y)
-            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))
+            # (player position, ball x, ball y, velocity x, velocity y)
+            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))*2
 
     def run_learning_episode(self) -> None:
         p = pongGame(self.map_size, self.map_size,
@@ -65,7 +65,7 @@ class Agent(AbstractAgent):
         done = False
 
         # Get init position info
-        player, c, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
+        player, _, ball_x, ball_y, vel_x, vel_y = p.getState()[:6]
         player = self.tab(player)
         ball_x = self.tab(ball_x)
         ball_y = self.tab(ball_y)
