@@ -1,14 +1,14 @@
-name: pong_learning
+name: pong
 channels:
   - apple
   - conda-forge
 dependencies:
-  - python=3.9  ## specify desired version
+  - python=3.9.1  ## specify desired version
   - pip
   - tensorflow-deps
   - numpy
-  - ipykernel
   - notebook
+  - nb_conda_kernels
 
   ## PyPI packages
   - pip:

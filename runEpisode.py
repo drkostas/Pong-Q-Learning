@@ -44,19 +44,44 @@ def clear_line():
     print("\033[A                             \033[A")
 
 
-def tab(item, grid_dem, map_size):
-    val = int(np.floor((item/map_size)*grid_dem))
-    if val == grid_dem:
-        val = val-1
-    return val
+def tab(item, grid_dem, map_size) -> int:
+        val = int(np.floor((item/map_size)*grid_dem))
+        if val >= grid_dem:
+            val = grid_dem-1
+        return val
 
-
-def tab_vel(vel):
-    if vel > 0:
-        return 1
-    else:
+def tab_vel_x(vel: float) -> int:
+    # return float(f"{vel:.1f}")
+    # return int(vel)
+    if vel < -2:
         return 0
+    elif vel < 0:
+        return 1
+    elif vel < 2:
+        return 2
+    else:
+        return 3
 
+def tab_vel_y(vel: float) -> int:
+    # return float(f"{vel:.1f}")
+    # return int(vel)
+    if vel < -1.5:
+        return 0
+    elif vel < -1.0:
+        return 1
+    elif vel < -0.5:
+        return 2
+    elif vel < 0:
+        return 3
+    elif vel < 0.5:
+        return 4
+    elif vel < 1.0:
+        return 5
+    elif vel < 1.5:
+        return 6
+    else:
+        return 7
+    
 
 def main():
     """ Main function"""
@@ -84,8 +109,8 @@ def main():
         ball_x = tab(ball_x, grid_dem, map_size)
         ball_y = tab(ball_y, grid_dem, map_size)
         if include_vel:
-            vel_x = tab_vel(vel_x)
-            vel_y = tab_vel(vel_y)
+            vel_x = tab_vel_x(vel_x)
+            vel_y = tab_vel_y(vel_y)
 
         if isinstance(Q, np.ndarray):
             if include_vel:
