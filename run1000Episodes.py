@@ -129,9 +129,10 @@ def main():
     # print(f"Max ball_y_vals value: {np.max(ball_y_vals)}")
     # print(f"Min vel_x_vals value: {np.min(vel_x_vals)}")
     # print(f"Max vel_x_vals value: {np.max(vel_x_vals)}")
+    # print(f"Mean vel_x_vals value: {np.histogram(vel_x_vals)}")
     # print(f"Min vel_y_vals value: {np.min(vel_y_vals)}")
     # print(f"Max vel_y_vals value: {np.max(vel_y_vals)}")
-    # print(f"Mean vel_y_vals value: {np.mean(vel_y_vals)}")
+    # print(f"Mean vel_y_vals value: {np.histogram(vel_y_vals)}")
     # print("Min Q value: ", np.min(Q))
     # print("Max Q value: ", np.max(Q))
 

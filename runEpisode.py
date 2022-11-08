@@ -10,7 +10,7 @@ import pickle
 import numpy as np
 from pong.pongclass import pongGame
 
-GAME_SPEED = 6
+GAME_SPEED = 2
 
 
 def load_args():

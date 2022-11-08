@@ -61,7 +61,7 @@ class Agent(AbstractAgent):
         # Initialize Q Table
         if self.include_vel:
             # (player position, ball x, ball y, velocity x, velocity y)
-            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 2, 4, 3))
+            self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 4, 8, 3))
         else:
             # (player position, ball x, ball y)
             self.Q = np.zeros((grid_dem, grid_dem, grid_dem, 3))
@@ -183,22 +183,34 @@ class Agent(AbstractAgent):
     def tab_vel_x(self, vel: float) -> int:
         # return float(f"{vel:.1f}")
         # return int(vel)
-        if vel < 0:
+        if vel < -2:
             return 0
-        else:
+        elif vel < 0:
             return 1
+        elif vel < 2:
+            return 2
+        else:
+            return 3
 
     def tab_vel_y(self, vel: float) -> int:
         # return float(f"{vel:.1f}")
         # return int(vel)
-        if vel < -0.5:
+        if vel < -1.5:
             return 0
-        elif vel < 0:
+        elif vel < -1.0:
             return 1
-        elif vel < 0.5:
+        elif vel < -0.5:
             return 2
-        else:
+        elif vel < 0:
             return 3
+        elif vel < 0.5:
+            return 4
+        elif vel < 1.0:
+            return 5
+        elif vel < 1.5:
+            return 6
+        else:
+            return 7
 
 
 class Agent_DL(AbstractAgent):
