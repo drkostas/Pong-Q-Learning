@@ -12,7 +12,7 @@ from time import time
 MAP_SIZE = 300
 GAME_SPEED = 2
 DRAW = False
-INCLUDE_VEL = True
+INCLUDE_VEL = False
 
 
 def load_args():
@@ -88,13 +88,14 @@ def main():
     win_count = []
     avg_score = []
     start_train_time = time()
-    # @GCantrall: alternatively we could use tqdm here:
+    # Alternatively we could use tqdm here @GCantrall:
     # from tqdm import tqdm
     # for i in tqdm(range(num_episodes)):
     for i in range(num_episodes):
         start_iter_time = time()
         agent.run_learning_episode()
         progress_bar((float(i))/num_episodes)
+        # check_freq_ = check_freq*50 if i < 950 or i > 1051 else check_freq # Deleteme
         if i % check_freq == 0 and i > 0:
             vals = agent.check()
             avg_score.append(vals[0])

@@ -37,7 +37,7 @@ class AbstractAgent(ABC):
         if training_time is not None:
             out['train_time'] = training_time
         # Save as pickle
-        file_name += '_with_vel' if self.include_vel else ''
+        file_name += '_with_vel' if self.include_vel else '_no_vel'
         with open(file_name+'.pkl', 'wb') as f:
             pickle.dump(out, f, pickle.HIGHEST_PROTOCOL)
         if show:
