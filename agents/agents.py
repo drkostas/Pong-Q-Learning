@@ -22,11 +22,20 @@ class AbstractAgent(ABC):
         self.game_speed = game_speed
         self.render_game = render_game
 
-    def save(self, file_name: str, show: bool = False) -> None:
+    def save(self, file_name: str, 
+             avg_score: float, win_count: int,
+             iter_time: int, training_time: int = None,
+             show: bool = False) -> None:
         out = {'alpha': self.alpha, 'epsilon': self.epsilon,
-               'Q': self.Q, 'grid_dem': self.grid_dem,
+               'Q': self.Q, 
+               'grid_dem': self.grid_dem,
                'map_size': self.map_size,
-               'include_vel': self.include_vel}
+               'include_vel': self.include_vel,
+               'avg_score': avg_score, 
+               'win_count': win_count,
+               'iter_time': iter_time}
+        if training_time is not None:
+            out['train_time'] = training_time
         # Save as pickle
         file_name += '_with_vel' if self.include_vel else ''
         with open(file_name+'.pkl', 'wb') as f:
