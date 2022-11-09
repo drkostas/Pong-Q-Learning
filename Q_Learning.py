@@ -95,8 +95,8 @@ def main():
         start_iter_time = time()
         agent.run_learning_episode()
         progress_bar((float(i))/num_episodes)
-        # check_freq_ = check_freq*50 if i < 950 or i > 1051 else check_freq # Deleteme
-        if i % check_freq == 0 and i > 0:
+        check_freq_ = check_freq*50 if i < 950 or i > 1051 else check_freq # Deleteme
+        if i % check_freq_ == 0 and i > 0:
             vals = agent.check()
             avg_score.append(vals[0])
             win_count.append(vals[1])
